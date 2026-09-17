@@ -1,0 +1,31 @@
+services:
+  redis-stack:
+    image: redis/redis-stack:latest
+    container_name: redis-stack
+    ports:
+      - "6379:6379"   # Redis protocol
+      - "8001:8001"   # RedisInsight UI -> http://localhost:8001
+    volumes:
+      - redis-stack-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: src/RedisStackDemo.Api/Dockerfile
+    container_name: redis-stack-demo-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__Redis=redis-stack:6379
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      redis-stack:
+        condition: service_healthy
+
+volumes:
+  redis-stack-data:
